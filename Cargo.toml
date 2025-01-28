@@ -4,8 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.95"
 axum = "0.8.1"
-sqlx = "0.8.3"
+base64 = "0.22.1"
+dotenv = "0.15.0"
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.138"
+sqlx = { version = "0.8.3", features = ["macros", "runtime-tokio", "sqlite"] }
 tokio = { version = "1.43.0", features = ["full"] }
+tower-http = { version = "0.6.2", features = ["cors", "trace"] }
 tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = ["fmt"] }
+tracing-subscriber = { version = "0.3.19", features = ["env-filter", "fmt"] }
