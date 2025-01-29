@@ -23,11 +23,11 @@ async fn main() {
 
     let app = Router::new()
         .route("/ref/{ref}/name", get(refs::get_ref_name))
-        .route("/ref/create", get(refs::create_ref))
+        .route("/ref/create/{name}", get(refs::create_ref))
         .layer(CorsLayer::very_permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(conn_pool);
 
-    let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let listener = TcpListener::bind(dotenv::var("BIND_ADDR").unwrap()).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }

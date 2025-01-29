@@ -3,8 +3,7 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::{IntoResponse, Response},
-    Json,
+    response::{IntoResponse, Response}
 };
 use base64::Engine;
 use serde::{Deserialize, Serialize};
@@ -24,10 +23,10 @@ struct Count {
 #[instrument(skip(pool) err(Debug))]
 pub async fn create_ref(
     State(pool): State<SqlitePool>,
-    Json(reference): Json<EntityReference>,
+    Path(name): Path<String>,
 ) -> Result<Response, Response> {
     let mut h = DefaultHasher::default();
-    reference.hash(&mut h);
+    name.hash(&mut h);
 
     let ref_key = base64::engine::general_purpose::URL_SAFE.encode(h.finish().to_be_bytes());
 
@@ -44,13 +43,11 @@ pub async fn create_ref(
         return Ok((StatusCode::BAD_REQUEST, "Reference already exists").into_response());
     }
 
-    let skills_json = serde_json::to_string(&reference.skills).unwrap();
-
     query!(
         "INSERT INTO refs (refstr, name, relevant_skills) VALUES(?, ?, ?)",
         ref_key,
-        reference.name,
-        skills_json
+        name,
+        ""
     )
     .execute(&pool)
     .await
