@@ -18,11 +18,12 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: 
-           - ${{ secrets.DOCKER_USERNAME }}/portfolio-backend:latest
-           - ${{ secrets.DOCKER_USERNAME }}/portfolio-backend:${{ github.sha }}
+          tags: | 
+           ${{ secrets.DOCKER_USERNAME }}/portfolio-backend:latest
+           ${{ secrets.DOCKER_USERNAME }}/portfolio-backend:${{ github.sha }}
 
   deploy:
+    needs: build-docker
     runs-on: ubuntu-latest
     steps:
       - name: executing remote ssh commands using ssh key
