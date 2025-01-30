@@ -1,0 +1,1 @@
+INSERT INTO refs (refstr, name, relevant_skills) VALUES("NOREF", "Friend", "[]");
