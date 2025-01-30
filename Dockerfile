@@ -4,12 +4,12 @@ WORKDIR /app
 
 VOLUME ["/data"]
 
-ENV DATABASE_URL="sqlite:///data/database.db?mode=rwc"
+ENV SQLX_OFFLINE=true
 
 RUN cargo install sqlx-cli
 
 COPY . .
 
-RUN sqlx migrate run
+COPY .sqlx .sqlx
 
 CMD ["cargo", "run", "--release"]
