@@ -12,4 +12,6 @@ COPY . .
 
 COPY .sqlx .sqlx
 
+RUN cargo build --release
+
 CMD ["cargo", "run", "--release"]

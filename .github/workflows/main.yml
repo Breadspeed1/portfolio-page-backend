@@ -35,4 +35,4 @@ jobs:
           port: ${{ secrets.PORT }}
           script: |
             cd portfolio/portfolio-docker
-            docker compose up --detach
+            docker compose up --detach --pull always
