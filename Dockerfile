@@ -6,7 +6,7 @@ VOLUME ["/data"]
 
 ENV SQLX_OFFLINE=true
 
-RUN cargo install sqlx-cli
+RUN cargo install sqlx-cli --no-default-features --features sqlite
 
 COPY . .
 

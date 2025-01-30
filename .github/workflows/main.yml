@@ -34,5 +34,5 @@ jobs:
           key: ${{ secrets.KEY }}
           port: ${{ secrets.PORT }}
           script: |
-            cd ~/portfolio/portfolio-backend
-            docker compuse up --detatch
+            cd portfolio/portfolio-backend
+            docker compuse up --detach
