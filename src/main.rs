@@ -27,6 +27,7 @@ async fn main() {
         .route("/skills/search/{search_term}", get(refs::search_skills))
         .route("/ref/{ref}/add_skill/{skill}", post(refs::add_skill_to_ref))
         .route("/ref/{ref}/skills", get(refs::get_skills))
+        .route("/ref/list", get(refs::list_refs))
         .layer(CorsLayer::very_permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(conn_pool);

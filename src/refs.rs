@@ -3,7 +3,7 @@ use std::{cmp::Ordering, hash::{DefaultHasher, Hash, Hasher}};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::{IntoResponse, Response}
+    response::{IntoResponse, Response}, Json
 };
 use base64::Engine;
 use serde::{Deserialize, Serialize};
@@ -11,9 +11,15 @@ use sqlx::{query, query_as, SqlitePool};
 use tracing::instrument;
 
 #[derive(Debug, Serialize, Deserialize, Hash)]
-pub struct EntityReference {
+pub struct EntitySkills {
     name: String,
     skills: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct EntityReference {
+    name: Option<String>,
+    refstr: Option<String>
 }
 
 struct Count {
@@ -54,6 +60,17 @@ pub async fn create_ref(
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
 
     Ok((StatusCode::OK, ref_key).into_response())
+}
+
+#[instrument(skip(pool), err(Debug))]
+pub async fn list_refs(State(pool): State<SqlitePool>) -> Result<Response, Response> {
+    let refs: Vec<EntityReference> = query_as!(
+        EntityReference,
+        "SELECT refstr, name FROM refs"
+    ).fetch_all(&pool).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
+
+
+    Ok((StatusCode::OK,serde_json::to_string(&refs).unwrap()).into_response())
 }
 
 #[instrument(skip(pool) err(Debug))]
