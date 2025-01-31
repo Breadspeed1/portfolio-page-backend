@@ -173,6 +173,34 @@ pub async fn add_skill_to_ref(State(pool): State<SqlitePool>, Path((refstr, skil
     Ok(StatusCode::OK.into_response())
 }
 
+pub async fn remove_skill_from_ref(State(pool): State<SqlitePool>, Path((refstr, skill)): Path<(String, String)>) -> Result<Response, Response> {
+    let mut tx = pool.begin().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
+
+    let skills_data = query!(
+        "SELECT relevant_skills FROM refs WHERE refstr = ?",
+        refstr
+    ).fetch_optional(&mut *tx).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?
+    .ok_or((StatusCode::BAD_REQUEST, "Reference does not exist").into_response())?
+    .relevant_skills.unwrap();
+
+    let mut skills: Vec<String> = serde_json::de::from_slice(skills_data.as_slice()).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
+
+
+    skills.retain(|s| !skill.eq(s));
+
+    let skills_str = serde_json::ser::to_string(&skills).unwrap();
+
+    query!(
+        "UPDATE refs SET relevant_skills = ? WHERE refstr = ?",
+        skills_str,
+        refstr
+    ).execute(&mut *tx).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
+
+    tx.commit().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
+
+    Ok(StatusCode::OK.into_response())
+}
+
 pub async fn get_skills(State(pool): State<SqlitePool>, Path(refstr): Path<String>) -> Result<Response, Response> {
     let skills_data = query!(
         "SELECT relevant_skills FROM refs WHERE refstr = ?",

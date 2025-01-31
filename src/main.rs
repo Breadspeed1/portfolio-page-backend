@@ -1,4 +1,4 @@
-use axum::{routing::{get, post}, Router};
+use axum::{routing::{delete, get, post}, Router};
 use sqlx::SqlitePool;
 use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
@@ -26,6 +26,7 @@ async fn main() {
         .route("/skills/create/{name}", post(refs::create_skill))
         .route("/skills/search/{search_term}", get(refs::search_skills))
         .route("/ref/{ref}/add_skill/{skill}", post(refs::add_skill_to_ref))
+        .route("/ref/{ref}/remove_skill/{skill}", delete(refs::remove_skill_from_ref))
         .route("/ref/{ref}/skills", get(refs::get_skills))
         .route("/ref/list", get(refs::list_refs))
         .layer(CorsLayer::very_permissive())
