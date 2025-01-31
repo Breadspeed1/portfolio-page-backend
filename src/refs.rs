@@ -3,7 +3,7 @@ use std::{cmp::Ordering, hash::{DefaultHasher, Hash, Hasher}};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::{IntoResponse, Response}
+    response::{IntoResponse, Response}, Json
 };
 use base64::Engine;
 use serde::{Deserialize, Serialize};
@@ -129,9 +129,8 @@ pub async fn search_skills(State(pool): State<SqlitePool>, Path(search_term): Pa
     res.sort_by(|(_, v1), (_, v2)| v1.partial_cmp(v2).unwrap_or(Ordering::Equal));
 
     let res = res.iter().map(|(s, _)| s.to_string()).collect::<Vec<String>>();
-    let res = serde_json::ser::to_string(&res).unwrap();
 
-    Ok((StatusCode::OK, res).into_response())
+    Ok((StatusCode::OK, Json(res)).into_response())
 }
 
 pub async fn add_skill_to_ref(State(pool): State<SqlitePool>, Path((refstr, skill)): Path<(String, String)>) -> Result<Response, Response> {
@@ -209,5 +208,5 @@ pub async fn get_skills(State(pool): State<SqlitePool>, Path(refstr): Path<Strin
     .ok_or((StatusCode::BAD_REQUEST, "Ref does not exist").into_response())?
     .relevant_skills.unwrap();
 
-    Ok((StatusCode::OK, String::from_utf8(skills_data).unwrap()).into_response())
+    Ok((StatusCode::OK, Json::<Vec<String>>::from_bytes(skills_data.as_slice()).unwrap()).into_response())
 }
