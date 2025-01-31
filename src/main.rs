@@ -23,6 +23,7 @@ async fn main() {
     let app = Router::new()
         .route("/ref/{ref}/name", get(refs::get_ref_name))
         .route("/ref/create/{name}", post(refs::create_ref))
+        .route("/ref/delete/{name}", delete(refs::delete_ref))
         .route("/skills/create/{name}", post(refs::create_skill))
         .route("/skills/search/{search_term}", get(refs::search_skills))
         .route("/ref/{ref}/add_skill/{skill}", post(refs::add_skill_to_ref))

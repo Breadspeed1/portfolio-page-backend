@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::{query, query_as, SqlitePool};
 use tracing::instrument;
 
+const DEFAULT_REF: &str = "NOREF";
+
 #[derive(Debug, Serialize, Deserialize, Hash)]
 pub struct EntitySkills {
     name: String,
@@ -60,6 +62,25 @@ pub async fn create_ref(
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
 
     Ok((StatusCode::OK, ref_key).into_response())
+}
+
+pub async fn delete_ref(
+    State(pool): State<SqlitePool>,
+    Path(refstr): Path<String>,
+) -> Result<Response, Response> {
+    if refstr == DEFAULT_REF {
+        return Err((StatusCode::BAD_REQUEST, "cannot delete default ref").into_response());
+    }
+
+    query!(
+        "DELETE FROM refs WHERE refstr = ?",
+        refstr,
+    )
+    .execute(&pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
+
+    Ok(StatusCode::OK.into_response())
 }
 
 #[instrument(skip(pool), err(Debug))]
