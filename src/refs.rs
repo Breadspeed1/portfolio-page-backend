@@ -3,7 +3,7 @@ use std::{cmp::Ordering, hash::{DefaultHasher, Hash, Hasher}};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::{IntoResponse, Response}, Json
+    response::{IntoResponse, Response}
 };
 use base64::Engine;
 use serde::{Deserialize, Serialize};
@@ -156,7 +156,9 @@ pub async fn add_skill_to_ref(State(pool): State<SqlitePool>, Path((refstr, skil
 
     let mut skills: Vec<String> = serde_json::de::from_slice(skills_data.as_slice()).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
 
-    skills.push(skill);
+    if !skills.contains(&skill) {
+        skills.push(skill);
+    }
 
     let skills_str = serde_json::ser::to_string(&skills).unwrap();
 
