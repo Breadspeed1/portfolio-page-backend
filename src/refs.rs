@@ -154,6 +154,18 @@ pub async fn search_skills(State(pool): State<SqlitePool>, Path(search_term): Pa
     Ok((StatusCode::OK, Json(res)).into_response())
 }
 
+pub async fn list_skills(State(pool): State<SqlitePool>) -> Result<Response, Response> {
+    let skills: Vec<String> = query!("SELECT skill FROM skills")
+        .fetch_all(&pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?
+        .into_iter()
+        .map(|row| row.skill.unwrap())
+        .collect();
+
+    Ok((StatusCode::OK, Json(skills)).into_response())
+}
+
 pub async fn add_skill_to_ref(State(pool): State<SqlitePool>, Path((refstr, skill)): Path<(String, String)>) -> Result<Response, Response> {
     let Count { count } = query_as!(
         Count,
