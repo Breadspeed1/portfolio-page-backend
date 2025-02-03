@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM skills WHERE skill = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "98da6dc510ba0774367ce8152feb49fd6af0d4454c5ea059458a607981e9e23c"
+}

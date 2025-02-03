@@ -14,8 +14,8 @@ const DEFAULT_REF: &str = "NOREF";
 
 #[derive(Debug, Serialize, Deserialize, Hash)]
 pub struct EntitySkills {
-    name: String,
-    skills: Vec<String>,
+    name: Option<String>,
+    relevant_skills: Option<Vec<u8>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -129,6 +129,48 @@ pub async fn create_skill(State(pool): State<SqlitePool>, Path(name): Path<Strin
         "INSERT INTO skills (skill) VALUES(?)",
         name
     ).execute(&pool).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
+
+    Ok(StatusCode::OK.into_response())
+}
+
+pub async fn delete_skill(State(pool): State<SqlitePool>, Path(skill): Path<String>) -> Result<Response, Response> {
+    let mut tx = pool.begin().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
+
+    let Count { count } = query_as!(
+        Count,
+        "SELECT COUNT(*) as count FROM skills WHERE skill = ?",
+        skill
+    ).fetch_one(&mut *tx).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
+
+    if count == 0 {
+        return Ok(StatusCode::OK.into_response());
+    }
+
+
+    let refs: Vec<EntitySkills> = query_as!(
+        EntitySkills,
+        "SELECT relevant_skills, name FROM refs"
+    ).fetch_all(&mut *tx).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
+
+    for i in 0..refs.len() {
+        let mut skills: Vec<String> = serde_json::from_slice(refs[i].relevant_skills.as_ref().unwrap().as_ref()).unwrap();
+        skills.retain(|s| !skill.eq(s));
+        let new_skills = serde_json::to_vec(&skills).unwrap();
+        let name = refs[i].name.as_ref().unwrap();
+
+        query!(
+            "UPDATE refs SET relevant_skills = ? WHERE name = ?",
+            new_skills,
+            name
+        ).execute(&mut *tx).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
+    }
+
+    query!(
+        "DELETE FROM skills WHERE skill = ?",
+        skill
+    ).execute(&mut *tx).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
+
+    tx.commit().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
 
     Ok(StatusCode::OK.into_response())
 }

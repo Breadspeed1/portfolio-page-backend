@@ -27,6 +27,7 @@ async fn main() {
         .route("/skills/create/{name}", post(refs::create_skill))
         .route("/skills/list", get(refs::list_skills))
         .route("/skills/search/{search_term}", get(refs::search_skills))
+        .route("/skills/delete/{skill}", delete(refs::delete_skill))
         .route("/ref/{ref}/add_skill/{skill}", post(refs::add_skill_to_ref))
         .route("/ref/{ref}/remove_skill/{skill}", delete(refs::remove_skill_from_ref))
         .route("/ref/{ref}/skills", get(refs::get_skills))

@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT relevant_skills, name FROM refs",
+  "describe": {
+    "columns": [
+      {
+        "name": "relevant_skills",
+        "ordinal": 0,
+        "type_info": "Blob"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true,
+      true
+    ]
+  },
+  "hash": "189a15a626c8bcdbcd1181606707f85bf1710bf2f9b82316d7fb4802dca21c63"
+}
