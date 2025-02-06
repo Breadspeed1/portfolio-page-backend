@@ -1,16 +1,24 @@
-use axum::{routing::{delete, get, post}, Router};
+use auth::{AuthPassword, JWTConfig, User};
+use axum::{middleware::from_extractor, routing::{delete, get, post}, Extension, Router};
 use sqlx::SqlitePool;
 use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::EnvFilter;
 
 mod refs;
+mod auth;
 
 #[tokio::main]
 async fn main() {
     let sqlite_addr = dotenv::var("DATABASE_URL").unwrap();
 
+    let jwt_config = JWTConfig {
+        secret: dotenv::var("JWT_SECRET").expect("No jwt secret found in environment.")
+    };
+
     let conn_pool = SqlitePool::connect(&sqlite_addr).await.unwrap();
+
+    let pw = dotenv::var("ADMIN_PASSWORD").expect("no admin password set");
 
     sqlx::migrate!("./migrations")
         .run(&conn_pool)
@@ -27,11 +35,17 @@ async fn main() {
         .route("/skills/create/{name}", post(refs::create_skill))
         .route("/skills/list", get(refs::list_skills))
         .route("/skills/search/{search_term}", get(refs::search_skills))
+        .route("/ref/{ref}/skills", get(refs::get_skills))
+        .route("/ref/list", get(refs::list_refs))
         .route("/skills/delete/{skill}", delete(refs::delete_skill))
         .route("/ref/{ref}/add_skill/{skill}", post(refs::add_skill_to_ref))
         .route("/ref/{ref}/remove_skill/{skill}", delete(refs::remove_skill_from_ref))
-        .route("/ref/{ref}/skills", get(refs::get_skills))
-        .route("/ref/list", get(refs::list_refs))
+        .route("/getref", get(auth::get_ref))
+        .layer(from_extractor::<User>())
+        .route("/token/{ref}", get(auth::generate_token))
+        .route("/token/admin", get(auth::upgrade))
+        .layer(Extension(jwt_config))
+        .layer(Extension(AuthPassword{ password: pw }))
         .layer(CorsLayer::very_permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(conn_pool);
