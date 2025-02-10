@@ -3,6 +3,7 @@ use axum::{middleware::from_extractor, routing::{delete, get, post}, Extension, 
 use sqlx::SqlitePool;
 use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 mod refs;
@@ -50,6 +51,10 @@ async fn main() {
         .layer(TraceLayer::new_for_http())
         .with_state(conn_pool);
 
-    let listener = TcpListener::bind(dotenv::var("BIND_ADDR").unwrap()).await.unwrap();
+    let addr = dotenv::var("BIND_ADDR").unwrap();
+
+    info!("Starting server - Listening on {addr}");
+
+    let listener = TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
