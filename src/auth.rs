@@ -8,8 +8,6 @@ use uuid::Uuid;
 
 use crate::refs::Count;
 
-const DEFAULT_REF: &str = "NOREF";
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Level {
     Normal,
@@ -35,6 +33,12 @@ impl User {
             exp: usize::MAX,
             id: Uuid::new_v4()
         }
+    }
+
+    fn upgrade(&self) -> Self {
+        let mut out = self.clone();
+        out.level = Level::Admin;
+        out
     }
 }
 
@@ -77,11 +81,11 @@ pub async fn generate_token(State(pool): State<SqlitePool>, Path(reference): Pat
     Ok(make_token(&User::new(reference, Level::Normal), &jc.secret).into_response())
 }
 
-pub async fn upgrade(Extension(AuthPassword{ password: pw }): Extension<AuthPassword>, Extension(jc): Extension<JWTConfig>, Json(AuthPassword { password }): Json<AuthPassword>) -> Result<Response, Response> {
+pub async fn upgrade(user: User, Extension(AuthPassword{ password: pw }): Extension<AuthPassword>, Extension(jc): Extension<JWTConfig>, Json(AuthPassword { password }): Json<AuthPassword>) -> Result<Response, Response> {
 
     // if you're reading this and you aren't me, look away <3
     if password == pw {
-        return Ok(make_token(&User::new(DEFAULT_REF.to_string(), Level::Admin), &jc.secret).into_response());
+        return Ok(make_token(&user.upgrade(), &jc.secret).into_response());
     }
 
     Err(StatusCode::UNAUTHORIZED.into_response())
