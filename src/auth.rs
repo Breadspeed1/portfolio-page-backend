@@ -1,9 +1,12 @@
 use std::usize;
 
-use axum::{extract::{FromRequestParts, Path}, http::{request::Parts, StatusCode}, response::{IntoResponse, Response}, Extension, Json};
+use axum::{extract::{FromRequestParts, Path, State}, http::{request::Parts, StatusCode}, response::{IntoResponse, Response}, Extension, Json};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
+use sqlx::{query_as, SqlitePool};
 use uuid::Uuid;
+
+use crate::refs::Count;
 
 const DEFAULT_REF: &str = "NOREF";
 
@@ -54,8 +57,21 @@ fn make_token(user: &User, sec: &str) -> String {
     ).unwrap()
 }
 
-pub async fn generate_token(Path(reference): Path<String>, Extension(jc): Extension<JWTConfig>) -> impl IntoResponse {
-    make_token(&User::new(reference, Level::Normal), &jc.secret)
+pub async fn generate_token(State(pool): State<SqlitePool>, Path(reference): Path<String>, Extension(jc): Extension<JWTConfig>) -> Result<Response, Response> {
+    let Count { count } = query_as!(
+        Count,
+        "SELECT COUNT(*) as count FROM refs WHERE refstr = ?",
+        reference
+    )
+    .fetch_one(&pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
+
+    if count == 0 {
+        return Err((StatusCode::BAD_REQUEST, "Reference does not exist").into_response());
+    }
+
+    Ok(make_token(&User::new(reference, Level::Normal), &jc.secret).into_response())
 }
 
 pub async fn upgrade(Extension(AuthPassword{ password: pw }): Extension<AuthPassword>, Extension(jc): Extension<JWTConfig>, Json(AuthPassword { password }): Json<AuthPassword>) -> Result<Response, Response> {
@@ -79,12 +95,7 @@ where
             .headers
             .get("authorization")
             .and_then(|h| h.to_str().ok())
-            .and_then(|h| match h.is_empty() {
-                true => None,
-                false => Some(h),
-            })
-            .and_then(|s| s.strip_prefix("jwt=").map(|s| s.to_string()))
-            .ok_or(StatusCode::UNAUTHORIZED.into_response())?;
+            .ok_or(StatusCode::UNAUTHORIZED.into_response())?.to_string();
 
         let jc: &JWTConfig = parts.extensions.get().expect("No JWT Config Set Up");
 

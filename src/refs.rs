@@ -24,8 +24,8 @@ pub struct EntityReference {
     refstr: Option<String>
 }
 
-struct Count {
-    count: i64,
+pub struct Count {
+    pub count: i64,
 }
 
 #[instrument(skip(pool) err(Debug))]
