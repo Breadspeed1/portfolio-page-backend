@@ -45,7 +45,7 @@ async fn main() {
         .route("/getref", get(auth::get_ref))
         .layer(from_extractor::<User>())
         .route("/token/{ref}", get(auth::generate_token))
-        .route("/token/admin", get(auth::upgrade))
+        .route("/token/admin", post(auth::upgrade))
         .layer(Extension(jwt_config))
         .layer(Extension(AuthPassword{ password: pw }))
         .layer(CorsLayer::very_permissive())
