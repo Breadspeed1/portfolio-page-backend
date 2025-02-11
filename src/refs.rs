@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, hash::{DefaultHasher, Hash, Hasher}};
+use std::hash::{DefaultHasher, Hash, Hasher};
 
 use axum::{
     extract::{Path, State},
@@ -173,27 +173,6 @@ pub async fn delete_skill(State(pool): State<SqlitePool>, Path(skill): Path<Stri
     tx.commit().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?;
 
     Ok(StatusCode::OK.into_response())
-}
-
-pub async fn search_skills(State(pool): State<SqlitePool>, Path(search_term): Path<String>) -> Result<Response, Response> {
-    let skills: Vec<String> = query!("SELECT skill FROM skills")
-        .fetch_all(&pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())?
-        .into_iter()
-        .map(|row| row.skill.unwrap())
-        .collect();
-
-    let skills: Vec<&str> = skills.iter().map(|s| s.as_ref()).collect();
-
-    let mut res = rust_fuzzy_search::fuzzy_search_threshold(&search_term, skills.as_slice(), 0.5);
-
-    //bad solution
-    res.sort_by(|(_, v1), (_, v2)| v1.partial_cmp(v2).unwrap_or(Ordering::Equal));
-
-    let res = res.iter().map(|(s, _)| s.to_string()).collect::<Vec<String>>();
-
-    Ok((StatusCode::OK, Json(res)).into_response())
 }
 
 pub async fn list_skills(State(pool): State<SqlitePool>) -> Result<Response, Response> {

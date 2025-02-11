@@ -17,6 +17,9 @@ pub enum Level {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AdminUser(User);
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct User {
     pub reference: String,
     pub level: Level,
@@ -102,5 +105,21 @@ where
         let user = decode::<User>(&token, &DecodingKey::from_secret(jc.secret.as_ref()), &Validation::default()).map_err(|_| StatusCode::UNAUTHORIZED.into_response())?;
 
         Ok(user.claims)
+    }
+}
+
+impl<S> FromRequestParts<S> for AdminUser
+where
+    S: Send + Sync + std::fmt::Debug,
+{
+    type Rejection = Response;
+
+    async fn from_request_parts(parts: &mut Parts, state: &S,) -> Result<Self, Self::Rejection> {
+        let user: User = User::from_request_parts(parts, state).await?;
+
+        match user.level {
+            Level::Normal => Err((StatusCode::UNAUTHORIZED, "You are not an admin user!").into_response()),
+            Level::Admin => Ok(AdminUser(user)),
+        }
     }
 }

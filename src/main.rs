@@ -1,5 +1,5 @@
-use auth::{AuthPassword, JWTConfig, User};
-use axum::{middleware::from_extractor, routing::{delete, get, post}, Extension, Router};
+use auth::{AdminUser, AuthPassword, JWTConfig, User};
+use axum::{http::StatusCode, middleware::from_extractor, routing::{delete, get, post}, Extension, Router};
 use sqlx::SqlitePool;
 use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
@@ -30,17 +30,18 @@ async fn main() {
         .init();
 
     let app = Router::new()
-        .route("/ref/{ref}/name", get(refs::get_ref_name))
         .route("/ref/create/{name}", post(refs::create_ref))
         .route("/ref/delete/{name}", delete(refs::delete_ref))
         .route("/skills/create/{name}", post(refs::create_skill))
-        .route("/skills/list", get(refs::list_skills))
-        .route("/skills/search/{search_term}", get(refs::search_skills))
-        .route("/ref/{ref}/skills", get(refs::get_skills))
         .route("/ref/list", get(refs::list_refs))
         .route("/skills/delete/{skill}", delete(refs::delete_skill))
         .route("/ref/{ref}/add_skill/{skill}", post(refs::add_skill_to_ref))
         .route("/ref/{ref}/remove_skill/{skill}", delete(refs::remove_skill_from_ref))
+        .route("/admincheck", get(StatusCode::OK))
+        .layer(from_extractor::<AdminUser>())
+        .route("/ref/{ref}/skills", get(refs::get_skills))
+        .route("/skills/list", get(refs::list_skills))
+        .route("/ref/{ref}/name", get(refs::get_ref_name))
         .route("/getref", get(auth::get_ref))
         .layer(from_extractor::<User>())
         .route("/token/{ref}", get(auth::generate_token))
